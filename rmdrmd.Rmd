@@ -1,0 +1,117 @@
+---
+title: "Visualizing Terrorist Attacks on Turkey"
+
+output: html_document
+---
+
+```{r, message= FALSE, warning = FALSE}
+GT <- read.csv("master1.csv")
+TIN = GT[which(GT$country_txt=='Turkey'),] 
+TIN[TIN==""] <- NA #empty cells become NA
+library(ggplot2)
+library(grid)
+library(leaflet)
+library(dplyr)
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+mapIND <- leaflet() %>% 
+  addTiles('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+  attribution='Map tiles by 
+    <a href="http://stamen.com">Stamen Design</a>, 
+    <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> 
+    &mdash; Map data &copy; 
+    <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>') %>%
+  setView(37, 37, zoom= 5)
+```
+
+##Let's visualize all terrorist attacks on the map
+```{r, message=FALSE, warning=FALSE, fig.width= 11, fig.height=6}
+mapIND %>% addCircles (data=TIN, lat= ~latitude, lng = ~longitude, 
+              popup=paste(
+                "<strong>Year: </strong>", TIN$iyear,
+                "<br><strong>City: </strong>", TIN$city, 
+                "<br><strong>Country: </strong>", TIN$country_txt, 
+                "<br><strong>Attack type: </strong>", TIN$attacktype1_txt, 
+                "<br><strong>Target: </strong>", TIN$targtype1_txt, 
+                " | ", TIN$targsubtype1_txt, 
+                " | ", TIN$target1, 
+                "<br><strong>Weapon: </strong>", TIN$weaptype1_txt, 
+                "<br><strong>Group: </strong>", TIN$gname, 
+                "<br><strong>Motive: </strong>", TIN$motive, 
+                "<br><strong>Summary: </strong>", TIN$summary),
+              weight = 0.9, color="#8B1A1A", stroke = TRUE, fillOpacity = 0.6)
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+```
+####Note: 
+- 1.) Click on any red point for specific details
+- 2.) Zoom in to view the exact location
+
+
+###1.0 let's have a look at terrorist attacks globally by attack type
+
+```{r, message=FALSE, warning=FALSE, fig.height=8, fig.width=15}
+
+ggplot(GT, aes(x = iyear))+ labs(title =" Terrorist attacks globally between 1970-2015 by attack type", x = "Years", y = "Number of Attacks", size = 15) + 
+  geom_bar(colour = "grey19", fill = "tomato3") + facet_wrap(~attacktype1_txt,scales = "free", ncol = 3) + 
+  theme(axis.text.x = element_text(hjust = 1, size = 12)) + theme(strip.text = element_text(size = 16, face = "bold"))
+```
+
+### 2.1 Terrorist attacks on Turkey between 1970-2015 by ATTACK type
+```{r, message=FALSE, warning=FALSE, fig.height=8, fig.width=15}
+ggplot(TIN,aes(x = iyear))+ labs(title =" Terrorist attacks on Turkey between 1970-2015 by attack type", x = "Years", y = "Number of Attacks") + 
+  geom_bar(colour = "grey19", fill = "tomato3") + facet_wrap(~attacktype1_txt) + theme(axis.text.x = element_text(hjust = 1, size = 12))+
+  theme(strip.text = element_text(size = 16, face = "bold"))
+```
+
+
+### 2.2 Yearwise terrorist attacks by ATTACK type in Turkey
+```{r, message=FALSE, warning=FALSE, fig.height=6, fig.width=15}
+ggplot(data=TIN, aes(x=iyear,fill=attacktype1_txt)) + geom_bar() + ggtitle("Yearly terrorist attacks by attack type in Turkey")+         
+    labs(x = "Years", y = "Number of Attacks")
+```
+
+### 3.1 By TARGET type
+```{r, message=FALSE, warning=FALSE, fig.height=8, fig.width=15}
+TINclean = TIN[which(TIN$targsubtype2_txt !='.'), ] 
+
+ggplot(TINclean, aes(x = iyear))+ labs(title =" Terrorist attacks on Turkey between 1970-2015 by TARGET type", x = "Years", y = "Number of Attacks") + 
+  geom_bar(colour = "grey19", fill = "tomato3") + facet_wrap(~targtype2_txt, ncol = 4) + theme(axis.text.x = element_text(hjust = 1, size = 12))+
+  theme(strip.text = element_text(size = 16, face = "bold"))
+```
+
+### 3.2 Yearwise terrorist attacks globally by TARGET type
+```{r, message=FALSE, warning=FALSE, fig.height=8, fig.width=15}
+ggplot(GT, aes(x=iyear,fill=targtype1_txt)) + geom_bar() + ggtitle("Yearly terrorist attacks globally by TARGET type")+         
+    labs(x = "Years", y = "Number of Attacks")
+```
+
+### 4.1 By WEAPON type 
+```{r, message=FALSE, warning=FALSE, fig.height=8, fig.width=15}
+ggplot(TIN, aes(x = iyear))+ labs(title =" Terrorist attacks on Turkey between 1970-2015 by WEAPON type", x = "Years", y = "Number of Attacks") + 
+  geom_bar(colour = "grey19", fill = "tomato3") + 
+  facet_wrap(~weaptype1_txt, ncol = 2) + theme(axis.text.x = element_text(hjust = 1, size = 12))+ theme(strip.text = element_text(size = 15, face = "bold"))
+```
+
+### 4.2 Yearwise terrorist attacks by WEAPON type
+```{r, message=FALSE, warning=FALSE, fig.height=6, fig.width=15}
+ggplot(data=TIN, aes(x=iyear,fill=weaptype1_txt)) + 
+    geom_bar() + ggtitle("Yearly terrorist attacks in Turkey by WEAPON type")+ 
+    labs(x = "Years", y = "Number of Attacks")
+```
+
+
+### 5.1 By Terrorist Groups
+```{r, message=FALSE, warning=FALSE, fig.height=50, fig.width=15}
+
+ggplot(TIN, aes(x = iyear))+ labs(title =" Terrorist attacks on Turkey between 1970-2015 by GROUP", x = "Years", y = "Number of Attacks") + 
+  geom_bar(colour = "grey19", fill = "skyblue") + 
+  facet_wrap(~gname, ncol = 5, scales = "free_y") + theme(axis.text.x = element_text(hjust = 1))+
+  theme(strip.text = element_text(size = 11, face = "bold"))
+```
+
+####(Y axis scale is set to free on Y axis for the plot 5.1)
